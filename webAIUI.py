@@ -25,10 +25,10 @@ def buildHeader():
     param = "{\"result_level\":\""+RESULT_LEVEL+"\",\"auth_id\":\""+AUTH_ID+"\",\"data_type\":\""+DATA_TYPE+"\",\"sample_rate\":\""+SAMPLE_RATE+"\",\"scene\":\""+SCENE+"\",\"lat\":\""+LAT+"\",\"lng\":\""+LNG+"\"}"
     #使用个性化参数时参数格式如下：
     #param = "{\"result_level\":\""+RESULT_LEVEL+"\",\"auth_id\":\""+AUTH_ID+"\",\"data_type\":\""+DATA_TYPE+"\",\"sample_rate\":\""+SAMPLE_RATE+"\",\"scene\":\""+SCENE+"\",\"lat\":\""+LAT+"\",\"lng\":\""+LNG+"\",\"pers_param\":\""+PERS_PARAM+"\"}"
-    paramBase64 = base64.b64encode(param)
-
+    paramBase64 = base64.b64encode(param.encode('utf-8'))
+    paramBase64 = paramBase64.decode('utf-8')
     m2 = hashlib.md5()
-    m2.update(API_KEY + curTime + paramBase64)
+    m2.update((API_KEY + curTime + paramBase64).encode('utf-8'))
     checkSum = m2.hexdigest()
 
     header = {
@@ -47,3 +47,4 @@ def readFile(filePath):
 def getText(fname):
     r = requests.post(URL, headers=buildHeader(), data=readFile(fname))
     print(r.content)
+    return r.content

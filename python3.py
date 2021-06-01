@@ -14,7 +14,7 @@ import os
 import signal
 import webAIUI
 import tts
-import json
+import simplejson as json
 from jsonpath import jsonpath
 
 interrupted = False
