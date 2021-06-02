@@ -28,6 +28,7 @@ from datetime import datetime
 from time import mktime
 import _thread as thread
 import os
+import play
 
 STATUS_FIRST_FRAME = 0  # 第一帧的标识
 STATUS_CONTINUE_FRAME = 1  # 中间帧标识
@@ -87,7 +88,6 @@ class Ws_Param(object):
 
 def on_message(ws, message):
     try:
-        print('message' + message)
         message =json.loads(message)
         code = message["code"]
         sid = message["sid"]
@@ -98,13 +98,18 @@ def on_message(ws, message):
         if status == 2:
             print("ws is closed")
             ws.close()
+            with open('./demo.pcm', 'ab') as f:
+                f.write(audio)
+                f.close()
+            play.play_audio('./demo.pcm', 16000, 16, 1)
         if code != 0:
             errMsg = message["message"]
             print("sid:%s call error:%s code is:%s" % (sid, errMsg, code))
         else:
-
+            print('demo.pcm')
             with open('./demo.pcm', 'ab') as f:
                 f.write(audio)
+                f.close()
 
     except Exception as e:
         print("receive msg,but parse exception:", e)
