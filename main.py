@@ -49,10 +49,11 @@ def callbacks():
 print('Listening... Press Ctrl+C to exit')
 
 def audioRecorderCallback(fname):
-    print(fname)
+    print("audiocallback:" + fname)
     # ASR
     r = webAIUI.getText(fname)
     # TTS
+    print('ASR result')
     json_data = json.loads(r)
     text = jsonpath(json_data, '$..content')
     print(text[0])
