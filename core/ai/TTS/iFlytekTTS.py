@@ -106,8 +106,7 @@ class iFlytekTTS(tts.TTS):
                                on_close=self.on_close)
         self.ws.on_open = self.on_open
         self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
-        print('return audio data')
-        return self.audio_data
+        return b''.join(self.audio_data)
     
     def on_message(self, ws, message):
         try:
@@ -119,8 +118,7 @@ class iFlytekTTS(tts.TTS):
             audio = base64.b64decode(audio)
             status = message["data"]["status"]
             if status == 2:
-                # self.audio_data.append(audio)
-                # self.audio_data = b''.join(self.audio_data)
+                self.audio_data.append(audio)
                 if self.callback:
                     self.callback(audio)
                 print("ws is closed")
@@ -129,7 +127,7 @@ class iFlytekTTS(tts.TTS):
                 errMsg = message["message"]
                 print("sid:%s call error:%s code is:%s" % (sid, errMsg, code))
             else:
-                # self.audio_data.append(audio)
+                self.audio_data.append(audio)
                 if self.callback:
                     self.callback(audio)
 
@@ -153,7 +151,7 @@ class iFlytekTTS(tts.TTS):
                 }
             d = json.dumps(d)
             print("------>开始发送文本数据:" + d)
-            self.audio_data = ''
+            self.audio_data = []
             self.ws.send(d)
             # if os.path.exists('./demo.pcm'):
             #     os.remove('./demo.pcm')
