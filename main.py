@@ -23,21 +23,27 @@ stopRecording = False
 
 def signal_handler(signal, frame):
     audio_recorder.stop_record()
+    audio_player.stop()
     wakeup_running = False
     sys.exit()
 
 def audiocallback(audio_data):
     if not stopRecording:
-        print('put start:' + str(q.qsize()))
         q.put(audio_data)
-        print('put end')
 
 def tts_callback(audio_data):
-    print('tts callback')
-    audio_player.play(audio_data)
+    length = len(audio_data)
+    step = 1024
+    start = 0
+    while start < length:
+        if start+step >= length:
+            audio_player.play(audio_data[start:(start+step)])
+            start += step
+        else:
+            audio_player.play(audio_data[start:(length-start)])
+            start += length-start
 
 def play_callback(in_data, frame_count, time_info, status):
-    data = wf.readframes(frame_count)
     return (data, pyaudio.paContinue)
 
 if __name__ == '__main__':
@@ -61,23 +67,21 @@ if __name__ == '__main__':
     wakeup_imp = reflect.get_class('SnowboyWakeup')
     wakeup = wakeup_imp(args)
 
-    # Recording modules initialized & running
-    audio_recorder = AudioRecorder(audiocallback=audiocallback)
-    audio_recorder.start()
-
     # Starting AudioPlayer
     global audio_player
     audio_player = AudioPlayer(16000, 16, 1, play_callback)
+    
+    # Recording modules initialized & running
+    audio_recorder = AudioRecorder(audiocallback=audiocallback)
+    audio_recorder.start()
 
     state = "PASSIVE"
     recordedData = []
     recordingCount = 0
     recording_timeout = 100
-    silent_count_threshold = 5
+    silent_count_threshold = 2
     while wakeup_running:
-        print('get start')
         data = q.get()
-        print('get end')
         status = wakeup.start(data)
         if status == wakeup.WAKEUP_ERROR:
             print('未知错误或未定义错误类型')
@@ -101,6 +105,7 @@ if __name__ == '__main__':
             elif status == wakeup.WAKEUP_SLIENT_FOUND: #silence found
                 if silentCount > silent_count_threshold:
                     stopRecording = True
+                    print('检测到后端点')
                 else:
                     silentCount = silentCount + 1
             elif status == 0: #voice found
@@ -117,16 +122,17 @@ if __name__ == '__main__':
                 asr = asr_imp(appid, apikey, auth_id)
                 audio = b''.join(recordedData)
                 r = asr.asr(audio)
-
+                result = str(r, encoding = "utf-8")
+                print(result)
                 json_data = json.loads(r)
-                text = jsonpath(json_data, '$..content')
-                if not text:
+                content = jsonpath(json_data, '$..content')
+                if not content:
                     print('没有找到识别结果')
                     state = "PASSIVE"
                     stopRecording = False
                     continue
 
-                print('识别结果:' + text[0])
+                print('识别结果:' + content[0])
                 appid = "5d2f27d2"
                 apikey = "a8331910d59d41deea317a3c76d47b60"
                 apisecret = "8110566cd9dd13066f9a1e38aeb12a48"
@@ -134,7 +140,7 @@ if __name__ == '__main__':
 
                 tts_imp = reflect.get_class('iFlytekTTS')
                 tts = tts_imp(appid, apikey, apisecret, xcn)
-                tts_data = tts.tts(text[0], callback=tts_callback)
+                tts_data = tts.tts(content[0], callback=tts_callback)
                 # with open('tts.pcm', 'wb') as f:
                 #     f.write(tts_data)
                 #     f.close()
