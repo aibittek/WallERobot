@@ -10,7 +10,7 @@ sys.path.append("../core/common")
 sys.path.append("../core/wakeup")
 sys.path.append("../core/audio")
 sys.path.append("../libs/modules/x86_64")
-import reflection
+import reflect
 from ringbuffer import RingBuffer
 from record import AudioRecorder
 
@@ -40,9 +40,7 @@ if __name__ == '__main__':
     }
 
     # Wakeup modules initialized, use reflect design
-    modules_name = 'SnowboyWakeup'
-    modules = __import__(modules_name, fromlist=True)
-    wakeup_imp = reflection.get_class(modules, modules_name)
+    wakeup_imp = reflect.get_class('SnowboyWakeup')
     wakeup = wakeup_imp(args)
 
     # Recording modules initialized & running

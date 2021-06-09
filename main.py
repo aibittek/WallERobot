@@ -13,11 +13,13 @@ sys.path.append("core/ai/TTS")
 sys.path.append("core/common")
 sys.path.append("core/wakeup")
 sys.path.append("libs/modules/x86_64")
-import reflection
+import reflect
 import play 
 from ringbuffer import RingBuffer
 from record import AudioRecorder
+from play import AudioPlayer
 
+stopRecording = False
 
 def signal_handler(signal, frame):
     audio_recorder.stop_record()
@@ -25,11 +27,18 @@ def signal_handler(signal, frame):
     sys.exit()
 
 def audiocallback(audio_data):
-    print(q.qsize())
-    q.put(audio_data)
+    if not stopRecording:
+        print('put start:' + str(q.qsize()))
+        q.put(audio_data)
+        print('put end')
 
 def tts_callback(audio_data):
-    play.play_audio(audio_data)
+    print('tts callback')
+    audio_player.play(audio_data)
+
+def play_callback(in_data, frame_count, time_info, status):
+    data = wf.readframes(frame_count)
+    return (data, pyaudio.paContinue)
 
 if __name__ == '__main__':
     # Capture SIGINT signal, e.g., Ctrl+C
@@ -49,14 +58,16 @@ if __name__ == '__main__':
     }
 
     # Wakeup modules initialized, use reflect design
-    modules_name = 'SnowboyWakeup'
-    modules = __import__(modules_name, fromlist=True)
-    wakeup_imp = reflection.get_class(modules, modules_name)
+    wakeup_imp = reflect.get_class('SnowboyWakeup')
     wakeup = wakeup_imp(args)
 
     # Recording modules initialized & running
     audio_recorder = AudioRecorder(audiocallback=audiocallback)
     audio_recorder.start()
+
+    # Starting AudioPlayer
+    global audio_player
+    audio_player = AudioPlayer(16000, 16, 1, play_callback)
 
     state = "PASSIVE"
     recordedData = []
@@ -64,7 +75,9 @@ if __name__ == '__main__':
     recording_timeout = 100
     silent_count_threshold = 5
     while wakeup_running:
+        print('get start')
         data = q.get()
+        print('get end')
         status = wakeup.start(data)
         if status == wakeup.WAKEUP_ERROR:
             print('未知错误或未定义错误类型')
@@ -93,38 +106,42 @@ if __name__ == '__main__':
             elif status == 0: #voice found
                 silentCount = 0
 
+            # start asr && tts
             if stopRecording == True:
+
                 appid = "5d2f27d2"
                 apikey = "a605c4712faefae730cc84b62c0eb92f"
                 auth_id = "f9be5221d3288ef324aeb1a0ce73abcd"
 
-                modules_name = 'iFlytekAIUI'
-                modules = __import__(modules_name, fromlist=True)
-                asr_imp = reflection.get_class(modules, modules_name)
+                asr_imp = reflect.get_class('iFlytekAIUI')
                 asr = asr_imp(appid, apikey, auth_id)
                 audio = b''.join(recordedData)
                 r = asr.asr(audio)
-                print(r)
+
                 json_data = json.loads(r)
                 text = jsonpath(json_data, '$..content')
-                # print('识别结果:' + text[0])
+                if not text:
+                    print('没有找到识别结果')
+                    state = "PASSIVE"
+                    stopRecording = False
+                    continue
 
+                print('识别结果:' + text[0])
                 appid = "5d2f27d2"
                 apikey = "a8331910d59d41deea317a3c76d47b60"
                 apisecret = "8110566cd9dd13066f9a1e38aeb12a48"
                 xcn = 'x2_xiaojuan'
-                modules_name = 'iFlytekTTS'
-                modules = __import__(modules_name, fromlist=True)
-                tts_imp = reflection.get_class(modules, modules_name)
+
+                tts_imp = reflect.get_class('iFlytekTTS')
                 tts = tts_imp(appid, apikey, apisecret, xcn)
-                tts_data = tts.tts(text[0], callback=None)
-                with open('tts.pcm', 'wb') as f:
-                    f.write(tts_data)
-                    f.close()
-                play.play_audio('tts.pcm', 16000, 16, 1)
-                
-                q.queue.clear()
+                tts_data = tts.tts(text[0], callback=tts_callback)
+                # with open('tts.pcm', 'wb') as f:
+                #     f.write(tts_data)
+                #     f.close()
+                # audio_player.stop()
+
                 state = "PASSIVE"
+                stopRecording = False
                 continue
 
             recordingCount = recordingCount + 1

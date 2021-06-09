@@ -1,33 +1,37 @@
 import pyaudio
 import time
 
-def play_audio(path, rate, formats, channels):
-    chunk = 1024
+class AudioPlayer():
+    def __init__(self, rate, formats, channels, callback):
+        self.rate = rate
+        self.formats = formats
+        self.channels = channels
+        self.callback = callback
+        self.chunk = 2048
 
-    # open the file for reading.
-    f = open(path, 'rb')
+        # create an audio object
+        self.audio = pyaudio.PyAudio()
 
-    # create an audio object
-    p = pyaudio.PyAudio()
+        # open stream based on the wave object which has been input.
+        # self.stream = self.audio.open(format = pyaudio.paInt16,
+        #                 channels = self.channels,
+        #                 rate = self.rate,
+        #                 output = True,
+        #                 stream_callback=self.callback)
+        self.stream = self.audio.open(format = pyaudio.paInt16,
+                        channels = self.channels,
+                        rate = self.rate,
+                        output = True)
 
-    # open stream based on the wave object which has been input.
-    stream = p.open(format = pyaudio.paInt16,
-                    channels = channels,
-                    rate = rate,
-                    output = True)
+    def play(self, data):
+        self.stream.write(data)
 
-    # read data (based on the chunk size)
-    # data = f.read(chunk)
-
-    # play stream (looping from beginning of file to the end)
-    while True:
-        # writing to the stream is what *actually* plays the sound.
-        data = f.read(chunk)
-        if len(data) <= 0:
-            break
-        stream.write(data)
-    time.sleep(0.5)
-    # cleanup stuff.
-    stream.close()
-    p.terminate()
-    print('play end')
+    def stop(self):
+        # wait for stream to finish
+        while self.stream.is_active():
+            time.sleep(0.1)
+        self.stream.stop_stream()
+    
+    def stop(self):
+        self.stream.close()
+        self.audio.terminate()
