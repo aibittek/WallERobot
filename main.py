@@ -5,6 +5,7 @@ import queue
 import sys
 import time
 import json
+import alsaaudio
 from jsonpath import jsonpath
 sys.path.append("core")
 sys.path.append("core/audio")
@@ -31,20 +32,8 @@ def audiocallback(audio_data):
     if not stopRecording:
         q.put(audio_data)
 
-def tts_callback(audio_data):
-    length = len(audio_data)
-    step = 1024
-    start = 0
-    while start < length:
-        if start+step >= length:
-            audio_player.play(audio_data[start:(start+step)])
-            start += step
-        else:
-            audio_player.play(audio_data[start:(length-start)])
-            start += length-start
-
-def play_callback(in_data, frame_count, time_info, status):
-    return (data, pyaudio.paContinue)
+def tts_callback(status, audio_data):
+    audio_player.play(audio_data)
 
 if __name__ == '__main__':
     # Capture SIGINT signal, e.g., Ctrl+C
@@ -69,7 +58,7 @@ if __name__ == '__main__':
 
     # Starting AudioPlayer
     global audio_player
-    audio_player = AudioPlayer(16000, 16, 1, play_callback)
+    audio_player = AudioPlayer('hw:0,0', 16000, alsaaudio.PCM_FORMAT_S16_LE, 1)
     
     # Recording modules initialized & running
     audio_recorder = AudioRecorder(audiocallback=audiocallback)

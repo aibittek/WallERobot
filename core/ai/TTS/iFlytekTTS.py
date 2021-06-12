@@ -120,7 +120,7 @@ class iFlytekTTS(tts.TTS):
             if status == 2:
                 self.audio_data.append(audio)
                 if self.callback:
-                    self.callback(audio)
+                    self.callback(status, audio)
                 print("ws is closed")
                 self.ws.close()
             if code != 0:
@@ -129,7 +129,7 @@ class iFlytekTTS(tts.TTS):
             else:
                 self.audio_data.append(audio)
                 if self.callback:
-                    self.callback(audio)
+                    self.callback(status, audio)
 
         except Exception as e:
             print("receive msg,but parse exception:", e)
