@@ -55,7 +55,7 @@ if __name__ == '__main__':
                 'resources/wakeup/tianmao/tianmaojingling.pmdl',
                 'resources/wakeup/xiaoaitongxue/xiaoaitongxue.pmdl'],
         'resource': 'resources/common.res',
-        'sensitivity': [0.6, 0.6, 0.6],
+        'sensitivity': [0.5, 0.5, 0.5],
         'apply_frontend': False,
         'audio_gain': 1,
     }
