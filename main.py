@@ -130,10 +130,9 @@ if __name__ == '__main__':
                 tts_imp = reflect.get_class('iFlytekTTS')
                 tts = tts_imp(appid, apikey, apisecret, xcn)
                 tts_data = tts.tts(content[0], callback=tts_callback)
-                # with open('tts.pcm', 'wb') as f:
-                #     f.write(tts_data)
-                #     f.close()
-                # audio_player.stop()
+                
+                while audio_player.playing:
+                    time.sleep(0.1)
 
                 state = "PASSIVE"
                 stopRecording = False

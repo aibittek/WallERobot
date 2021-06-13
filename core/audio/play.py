@@ -26,7 +26,7 @@ class AudioPlayer():
         self.channels = channels
         self.chunk = 320
         self.playing = False
-        self.buffer = RingBuffer(format='B', capacity=320000)
+        self.buffer = RingBuffer(format='B', capacity=1024*1024)
         
         self.stream = alsaaudio.PCM(alsaaudio.PCM_PLAYBACK, 
             channels=self.channels, 
