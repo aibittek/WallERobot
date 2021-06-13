@@ -1,3 +1,4 @@
+import os
 import sys
 import signal
 import time
@@ -6,6 +7,7 @@ import sys
 import time
 import json
 import alsaaudio
+import platform
 from jsonpath import jsonpath
 sys.path.append("core")
 sys.path.append("core/audio")
@@ -13,6 +15,15 @@ sys.path.append("core/ai/ASR")
 sys.path.append("core/ai/TTS")
 sys.path.append("core/common")
 sys.path.append("core/wakeup")
+
+if platform.system() == "Linux":
+    if platform.processor() == 'x86_64':
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "/lib/modules/x86_64"))
+    else:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "/lib/modules/pi"))
+else:
+    raise ImportError("now snowboy only runs on pi or Ubuntu 16.04.")
+
 sys.path.append("libs/modules/x86_64")
 import reflect
 import play 
